@@ -1,28 +1,46 @@
-name: Daily Auto Commit
+name: Daily Commit Automation
 
 on:
   schedule:
-    # Runs every day at 10:00 AM UTC (you can change this time)
-    - cron: "0 10 * * *"
-  workflow_dispatch: # allows manual runs
+    # Runs daily at 10:30 UTC (specific time, not wildcards)
+    - cron: '30 10 * * *'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
 
 jobs:
-  daily_commit_job:
+  daily-commit:
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Make a small change by 23f1001452@ds.study.iitm.ac.in
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure Git for 23f1001452@ds.study.iitm.ac.in
         run: |
-          echo "Last run on $(date)" > last_run.txt
-
+          git config --global user.name "DevSync Bot"
+          git config --global user.email "23f1001452@ds.study.iitm.ac.in"
+      
+      - name: Create daily update file
+        run: |
+          # Create a logs directory if it doesn't exist
+          mkdir -p logs
+          
+          # Generate timestamp
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S UTC')
+          
+          # Create or update the daily log file
+          echo "Daily Update - $TIMESTAMP" >> logs/daily-updates.log
+          echo "Repository activity recorded by DevSync automation" >> logs/daily-updates.log
+          echo "---" >> logs/daily-updates.log
+      
       - name: Commit and push changes
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "23f1001452@ds.study.iitm.ac.in"
           git add .
-          git commit -m "chore: daily auto-commit $(date)"
+          git commit -m "chore: daily automated update - $(date '+%Y-%m-%d')"
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
